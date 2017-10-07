@@ -1,11 +1,11 @@
 from math import exp
 import numpy as np
-import matplotlib.pyplot as py
+import random
+import matplotlib.pyplot as plt
 
 # For pretty-printing the arrays
 np.set_printoptions(precision=3)
 np.set_printoptions(suppress=True)
-
 
 def welcome():
     print 'This program learns to distinguish between five capital letters: X, M, H, A, and N'
@@ -166,30 +166,25 @@ def ComputeOutputsAcrossAllTrainingData(alpha, arraySizeList, numTrainingDataSet
             trainingData = trainingDataList[node]
             inputDataList.append(trainingData)
 
-        print ' '
-        print '  Data Set Number', selectedTrainingDataSet, ' for letter ', trainingDataList[26]
+        print ' >In ComputeOutputsAcrossAllTrainingData():'
+        print '   >Data Set Number', selectedTrainingDataSet, 'for letter ', trainingDataList[26]
 
         hiddenArray = ComputeSingleFeedforwardPassFirstStep(alpha, arraySizeList, inputDataList, wWeightArray,
                                                             biasHiddenWeightArray)
 
-        print ' '
-        print ' The hidden node activations are:'
-        print hiddenArray
+        # print '   >The hidden node activations are:'
+        # print hiddenArray
 
         outputArray = ComputeSingleFeedforwardPassSecondStep(alpha, arraySizeList, hiddenArray, vWeightArray,
                                                              biasOutputWeightArray)
 
-        print ' '
-        print ' The output node activations are:'
-        print outputArray
+        print '   >The output node activations are:', outputArray
 
         desiredOutputArray = np.zeros(outputArrayLength)  # initialize the output array with 0's
         desiredClass = trainingDataList[25]  # identify the desired class
         desiredOutputArray[desiredClass] = 1  # set the desired output for that class to 1
 
-        print ' '
-        print ' The desired output array values are: '
-        print desiredOutputArray
+        print '   >The desired output array values are: ', desiredOutputArray
 
         # Determine the error between actual and desired outputs
 
@@ -201,12 +196,10 @@ def ComputeOutputsAcrossAllTrainingData(alpha, arraySizeList, numTrainingDataSet
             errorArray[node] = desiredOutputArray[node] - outputArray[node]
             newSSE = newSSE + errorArray[node] * errorArray[node]
 
-        print ' '
-        print ' The error values are:'
-        print errorArray
+        print '   >The error values are:', errorArray
 
         # Print the Summed Squared Error
-        print 'New SSE = %.6f' % newSSE
+        print '   >New SSE = %.6f' % newSSE
 
         selectedTrainingDataSet = selectedTrainingDataSet + 1
 
@@ -368,14 +361,13 @@ def BackpropagateBiasHiddenWeights(alpha, eta, arraySizeList, errorArray, output
 #       - Compute the new Summed Squared Error (SSE)
 #   (5) Perform a single backpropagation training pass
 def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTrainingDataSets = 4, seed_value = 1):
-    import random
     random.seed(seed_value)
 
     welcome()
 
     iteration = 0
-    SSE = 0.0
 
+    print '1. Setting up network...'
     # Obtain the actual sizes for each layer of the network
     arraySizeList = obtainNeuralNetworkSizeSpecs()
 
@@ -383,11 +375,14 @@ def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTra
     inputArrayLength = arraySizeList[0]
     hiddenArrayLength = arraySizeList[1]
     outputArrayLength = arraySizeList[2]
+    print '....ip nodes: %d, hidden nodes: %d, output nodes: %d' %(inputArrayLength, hiddenArrayLength, outputArrayLength)
+    print '....Done'
 
     # Initialize the weight arrays for two sets of weights; w: input-to-hidden, and v: hidden-to-output
     # The wWeightArray is for Input-to-Hidden
     # The vWeightArray is for Hidden-to-Output
 
+    print '2. Initializing 1st random weights...'
     wWeightArraySizeList = (inputArrayLength, hiddenArrayLength)
     vWeightArraySizeList = (hiddenArrayLength, outputArrayLength)
     biasHiddenWeightArraySize = hiddenArrayLength
@@ -400,22 +395,29 @@ def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTra
     # The bias weights are stored in a 1-D array
     biasHiddenWeightArray = initializeBiasWeightArray(biasHiddenWeightArraySize)
     biasOutputWeightArray = initializeBiasWeightArray(biasOutputWeightArraySize)
+    print '....Done'
 
     # Before we start training, get a baseline set of outputs, errors, and SSE
-    print ' '
-    print '  Before training:'
+    print '3. Baseline output before any training...'
     ComputeOutputsAcrossAllTrainingData(alpha, arraySizeList, numTrainingDataSets, wWeightArray,
                                         biasHiddenWeightArray, vWeightArray, biasOutputWeightArray)
+    print '....Done'
 
+    print '4. Initiating trackers...'
     # Variables to track changes in wWeight, vWeight, hiddenBias, outputBias, and SSE
     wWeightTracker = dict()
     vWeightTracker = dict()
     hiddenBiasTracker = dict()
     outputBiasTracker = dict()
     SSETracker = dict()
+    letterTracker = dict()
+    print '....Done'
 
     # Next step - Obtain a single set of randomly-selected training values for alpha-classification
+    print '5. Starting convergence iterations...'
     while iteration < maxNumIterations:
+
+        print '  >> Iteration number: ', iteration
 
         # Increment the iteration count
         iteration = iteration + 1
@@ -430,16 +432,13 @@ def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTra
             trainingData = trainingDataList[node]
             inputDataList.append(trainingData)
 
-        print '\n Training set selected for letter: ', trainingDataList[26]
+        print '     Training set randomly chosen: Letter ', trainingDataList[26]
 
         desiredOutputArray = np.zeros(outputArrayLength)  # initialize the output array with 0's
         desiredClass = trainingDataList[25]  # identify the desired class
         desiredOutputArray[desiredClass] = 1  # set the desired output for that class to 1
 
-        print ' '
-        print ' The desired output array values are: '
-        print desiredOutputArray
-        print ' '
+        print '     The desired output array values are: ', desiredOutputArray
 
         # Compute a single feed-forward pass and obtain the Actual Outputs
 
@@ -449,13 +448,12 @@ def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTra
         outputArray = ComputeSingleFeedforwardPassSecondStep(alpha, arraySizeList, hiddenArray,
                                                              vWeightArray, biasOutputWeightArray)
 
-        #  Optional alternative code for later use:
-        #  Assign the hidden and output values to specific different variables
-        #    for node in range(hiddenArrayLength):
-        #        actualHiddenOutput[node] = actualAllNodesOutputList [node]
-
-        #    for node in range(outputArrayLength):
-        #        actualOutput[node] = actualAllNodesOutputList [hiddenArrayLength + node]
+            #  Optional alternative code for later use:
+            #  Assign the hidden and output values to specific different variables
+            #    for node in range(hiddenArrayLength):
+            #        actualHiddenOutput[node] = actualAllNodesOutputList [node]
+            #    for node in range(outputArrayLength):
+            #        actualOutput[node] = actualAllNodesOutputList [hiddenArrayLength + node]
 
         # Initialize the error array
         errorArray = np.zeros(outputArrayLength)
@@ -466,21 +464,7 @@ def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTra
             errorArray[node] = desiredOutputArray[node] - outputArray[node]
             newSSE = newSSE + errorArray[node] * errorArray[node]
 
-        # print ' '
-        #        print ' The error values are:'
-        #        print errorArray
-
-        # Print the Summed Squared Error
-        #        print 'Initial SSE = %.6f' % newSSE
-        #        SSE = newSSE
-
-
-
-        ####################################################################################################
         # Perform backpropagation
-        ####################################################################################################
-
-
         # Perform first part of the backpropagation of weight changes
         newVWeightArray = BackpropagateOutputToHidden(alpha, eta, arraySizeList, errorArray, outputArray, hiddenArray,
                                                       vWeightArray)
@@ -491,63 +475,43 @@ def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTra
         newWWeightArray = BackpropagateHiddenToInput(alpha, eta, arraySizeList, errorArray, outputArray, hiddenArray,
                                                      inputDataList, vWeightArray, wWeightArray, biasHiddenWeightArray,
                                                      biasOutputWeightArray)
-
         newBiasHiddenWeightArray = BackpropagateBiasHiddenWeights(alpha, eta, arraySizeList, errorArray, outputArray,
                                                                   hiddenArray,
                                                                   inputDataList, vWeightArray, wWeightArray,
                                                                   biasHiddenWeightArray, biasOutputWeightArray)
 
         # Assign new values to the weight matrices
-        # Assign the old hidden-to-output weight array to be the same as what was returned from the BP weight update
         vWeightArray = newVWeightArray[:]
-
         biasOutputWeightArray = newBiasOutputWeightArray[:]
-
-        # Assign the old input-to-hidden weight array to be the same as what was returned from the BP weight update
         wWeightArray = newWWeightArray[:]
-
         biasHiddenWeightArray = newBiasHiddenWeightArray[:]
 
         # Compute a forward pass, test the new SSE
-
         hiddenArray = ComputeSingleFeedforwardPassFirstStep(alpha, arraySizeList, inputDataList,
                                                             wWeightArray, biasHiddenWeightArray)
-
-        #    print ' '
-        #    print ' The hidden node activations are:'
-        #    print hiddenArray
-
         outputArray = ComputeSingleFeedforwardPassSecondStep(alpha, arraySizeList, hiddenArray,
                                                              vWeightArray, biasOutputWeightArray)
 
-        #    print ' '
-        #    print ' The output node activations are:'
-        #    print outputArray
-
-
         # Determine the error between actual and desired outputs
-
         newSSE = 0.0
         for node in range(outputArrayLength):  # Number of nodes in output set (classes)
             errorArray[node] = desiredOutputArray[node] - outputArray[node]
             newSSE = newSSE + errorArray[node] * errorArray[node]
 
-        # print ' '
-        #        print ' The error values are:'
-        #        print errorArray
+        print '     {*} For iteration %d, the SSE = %.6f' %(iteration, newSSE)
 
-        # Print the Summed Squared Error
-        #        print 'Previous SSE = %.6f' % SSE
-        #        print 'New SSE = %.6f' % newSSE
-
-        #        print ' '
-        #        print 'Iteration number ', iteration
-        #        iteration = iteration + 1
+        # Tracker functionality
+        wWeightTracker[iteration] = wWeightArray
+        vWeightTracker[iteration] = vWeightArray
+        hiddenBiasTracker[iteration] = biasHiddenWeightArray
+        outputBiasTracker[iteration] = biasOutputWeightArray
+        SSETracker[iteration] = newSSE
+        letterTracker[iteration] = trainingDataList[26]
 
         if newSSE < epsilon:
             break
 
-    print 'Out of while loop at iteration ', iteration
+    print '\n** Out of while loop at iteration **', iteration
 
     # After training, get a new comparative set of outputs, errors, and SSE
     print ' '
@@ -555,5 +519,26 @@ def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTra
     ComputeOutputsAcrossAllTrainingData(alpha, arraySizeList, numTrainingDataSets, wWeightArray,
                                         biasHiddenWeightArray, vWeightArray, biasOutputWeightArray)
 
+    return vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker
 
-if __name__ == "__main__": main()
+# if __name__ == "__main__": main()
+
+vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker = main(alpha=1.0,
+     eta=0.5,
+     maxNumIterations=100,
+     epsilon=0.1,
+     numTrainingDataSets=4,
+     seed_value=1
+     )
+
+
+def plotSSE(SSETracker, letterTracker):
+    x, y = zip(*SSETracker.items())
+
+    fig, ax = plt.subplots()
+    im = ax.plot(x,y)
+    ax.set_title('Total SSE over convergence')
+    plt.show()
+
+    return
+
