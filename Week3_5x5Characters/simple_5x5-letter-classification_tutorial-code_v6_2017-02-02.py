@@ -424,30 +424,30 @@ biasHiddenWeightArray, vWeightArray, biasOutputWeightArray):
 
 def BackpropagateOutputToHidden (alpha, eta, arraySizeList, errorArray, outputArray, hiddenArray, vWeightArray):
 
-# The first step here applies a backpropagation-based weight change to the hidden-to-output wts v. 
-# Core equation for the first part of backpropagation: 
-# d(SSE)/dv(h,o) = -alpha*Error*F(1-F)*Hidden(h)
-# where:
-# -- SSE = sum of squared errors, and only the error associated with a given output node counts
-# -- v(h,o) is the connection weight v between the hidden node h and the output node o
-# -- alpha is the scaling term within the transfer function, often set to 1
-# ---- (this is included in transfFuncDeriv) 
-# -- Error = Error(o) or error at the output node o; = Desired(o) - Actual(o)
-# -- F = transfer function, here using the sigmoid transfer function
-# -- Hidden(h) = the output of hidden node h. 
+    # The first step here applies a backpropagation-based weight change to the hidden-to-output wts v.
+    # Core equation for the first part of backpropagation:
+    # d(SSE)/dv(h,o) = -alpha*Error*F(1-F)*Hidden(h)
+    # where:
+    # -- SSE = sum of squared errors, and only the error associated with a given output node counts
+    # -- v(h,o) is the connection weight v between the hidden node h and the output node o
+    # -- alpha is the scaling term within the transfer function, often set to 1
+    # ---- (this is included in transfFuncDeriv)
+    # -- Error = Error(o) or error at the output node o; = Desired(o) - Actual(o)
+    # -- F = transfer function, here using the sigmoid transfer function
+    # -- Hidden(h) = the output of hidden node h.
 
-# We will DECREMENT the connection weight v by a small amount proportional to the derivative eqn
-#   of the SSE w/r/t the weight v. 
-# This means, since there is a minus sign in that derivative, that we will add a small amount. 
-# (Decrementing is -, applied to a (-), which yields a positive.)
+    # We will DECREMENT the connection weight v by a small amount proportional to the derivative eqn
+    #   of the SSE w/r/t the weight v.
+    # This means, since there is a minus sign in that derivative, that we will add a small amount.
+    # (Decrementing is -, applied to a (-), which yields a positive.)
 
-# For the actual derivation of this equation with MATCHING VARIABLE NAMES (easy to understand), 
-#   please consult: Brain-Based Computing, by AJ Maren (under development, Jan., 2017). Chpt. X. 
-#   (Meaning: exact chapter is still TBD.) 
-# For the latest updates, etc., please visit: www.aliannajmaren.com
+    # For the actual derivation of this equation with MATCHING VARIABLE NAMES (easy to understand),
+    #   please consult: Brain-Based Computing, by AJ Maren (under development, Jan., 2017). Chpt. X.
+    #   (Meaning: exact chapter is still TBD.)
+    # For the latest updates, etc., please visit: www.aliannajmaren.com
 
 
-# Unpack array lengths
+    # Unpack array lengths
     hiddenArrayLength = arraySizeList [1]
     outputArrayLength = arraySizeList [2]
 
