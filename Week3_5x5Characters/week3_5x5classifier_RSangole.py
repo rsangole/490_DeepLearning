@@ -557,26 +557,54 @@ vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker
      )
 
 
-def plotSSE(SSETracker, letterTracker):
+def plotSSE(SSETracker, letterTracker, alpha, eta,
+            maxNumIterations, epsilon, numTrainingDataSets,
+            seed_value):
     x, y = zip(*SSETracker.items())
     x, letters = zip(*letterTracker.items())
     df = pd.DataFrame(dict(iterations=x, SSE=y, letters=letters))
-    sns.lmplot(x='iterations', y='SSE', data=df,
-               fit_reg=False, hue='letters', lowess=True)
+    groups = df.groupby('letters')
+    # sns.lmplot(x='iterations', y='SSE', data=df,
+    #            fit_reg=False, hue='letters', lowess=True)
 
-    return
+    # Plot
+    fig, ax = plt.subplots()
+    ax.margins(0.05)  # Optional, just adds 5% padding to the autoscaling
+    for name, group in groups:
+        ax.plot(group.iterations, group.SSE, marker='o', linestyle='', ms=4,
+                label=name, alpha = .6)
+    ax.legend()
+    ax.set_xlabel('Iteration Number')
+    ax.set_ylabel('SSE')
+    ax.set_title('alpha: %1.1f  eta: %1.1f  epsilon: %1.1f  maxIter: %d  seed: %d' %(alpha, eta, epsilon, maxNumIterations, seed_value))
 
-plotSSE(SSETracker,letterTracker)
+    plt.show()
+
 
 # Question 1:
 # Get a convergent solution for all letters:
-vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker = main(alpha=1.0,
-     eta=0.5,
-     maxNumIterations=1000,
-     epsilon=0.1,
-     numTrainingDataSets=4,
-     seed_value=1
-     )
+alpha = 1.0
+eta = 0.5
+maxNumIterations = 1000
+epsilon = 0.1
+numTrainingDataSets = 4
+seed_value = 1
+
+vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker = main(
+    alpha=alpha,
+    eta=eta,
+    maxNumIterations=maxNumIterations,
+    epsilon=epsilon,
+    numTrainingDataSets=numTrainingDataSets,
+    seed_value=seed_value
+)
+plotSSE(SSETracker, letterTracker, alpha=alpha,
+    eta=eta,
+    maxNumIterations=maxNumIterations,
+    epsilon=epsilon,
+    numTrainingDataSets=numTrainingDataSets,
+    seed_value=seed_value)
 
 # Question 2:
-#
+# Explore sensitivity of SSE to eta & alpha
+
