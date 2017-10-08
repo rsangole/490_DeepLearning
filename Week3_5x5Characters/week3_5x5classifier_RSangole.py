@@ -532,7 +532,7 @@ def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTra
 
         if newSSE < epsilon:
             errors = ComputeOutputsAcrossAllTrainingData(alpha, arraySizeList, numTrainingDataSets, wWeightArray,
-                                                         biasHiddenWeightArray, vWeightArray, biasOutputWeightArray, verbose)
+                                                         biasHiddenWeightArray, vWeightArray, biasOutputWeightArray)
             if allErrorsBelowEpsilon(errors, epsilon):
                 break
 
@@ -545,16 +545,6 @@ def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTra
                                         biasHiddenWeightArray, vWeightArray, biasOutputWeightArray)
 
     return vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker
-
-# if __name__ == "__main__": main()
-
-vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker = main(alpha=1.0,
-     eta=0.5,
-     maxNumIterations=1000,
-     epsilon=0.1,
-     numTrainingDataSets=4,
-     seed_value=1
-     )
 
 
 def plotSSE(SSETracker, letterTracker, alpha, eta,
@@ -576,7 +566,8 @@ def plotSSE(SSETracker, letterTracker, alpha, eta,
     ax.legend()
     ax.set_xlabel('Iteration Number')
     ax.set_ylabel('SSE')
-    ax.set_title('alpha: %1.1f  eta: %1.1f  epsilon: %1.1f  maxIter: %d  seed: %d' %(alpha, eta, epsilon, maxNumIterations, seed_value))
+    ax.set_title('alpha: %1.1f  eta: %1.1f  epsilon: %1.1f  Iter/maxIter: %d/%d  seed: %d' %(alpha, eta, epsilon, df.shape[0], maxNumIterations, seed_value))
+    ax.set_ylim([0, 1.5])
 
     plt.show()
 
@@ -606,5 +597,75 @@ plotSSE(SSETracker, letterTracker, alpha=alpha,
     seed_value=seed_value)
 
 # Question 2:
-# Explore sensitivity of SSE to eta & alpha
+# Explore sensitivity of SSE to alpha
+eta = 0.5
+maxNumIterations = 1000
+epsilon = 0.1
+numTrainingDataSets = 4
+seed_value = 1
+maxNumIterations = 10000
+for a in [0.5,1.0,1.5]:
+    vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker = main(
+        alpha=a,
+        eta=eta,
+        maxNumIterations=maxNumIterations,
+        epsilon=epsilon,
+        numTrainingDataSets=numTrainingDataSets,
+        seed_value=seed_value
+    )
+    plotSSE(SSETracker, letterTracker, alpha=a,
+            eta=eta,
+            maxNumIterations=maxNumIterations,
+            epsilon=epsilon,
+            numTrainingDataSets=numTrainingDataSets,
+            seed_value=seed_value)
 
+# Explore sensitivity of SSE to eta
+alpha = 1.0
+maxNumIterations = 10000
+epsilon = 0.1
+numTrainingDataSets = 4
+seed_value = 1
+for e in [0.1,0.5,1.0]:
+    vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker = main(
+        alpha=alpha,
+        eta=e,
+        maxNumIterations=maxNumIterations,
+        epsilon=epsilon,
+        numTrainingDataSets=numTrainingDataSets,
+        seed_value=seed_value
+    )
+    plotSSE(SSETracker, letterTracker, alpha=alpha,
+            eta=e,
+            maxNumIterations=maxNumIterations,
+            epsilon=epsilon,
+            numTrainingDataSets=numTrainingDataSets,
+            seed_value=seed_value)
+
+# Both together now
+maxNumIterations = 3000
+epsilon = 0.1
+numTrainingDataSets = 4
+seed_value = 1
+alpha = np.arange(0.4,1.6,.1)
+eta   = np.arange(0.1,2.1,.1)
+tuneGrid = np.zeros((len(alpha),len(eta)))
+for a in range(len(alpha)):
+    for e in range(len(eta)):
+        vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker = main(
+            alpha=alpha[a],
+            eta=eta[e],
+            maxNumIterations=maxNumIterations,
+            epsilon=epsilon,
+            numTrainingDataSets=numTrainingDataSets,
+            seed_value=seed_value
+        )
+        tuneGrid[a,e]=len(SSETracker)
+
+tuneGrid
+plt.figure()
+CS = plt.contour(eta, alpha, tuneGrid,linestyles='dashed')
+plt.clabel(CS, inline=1, fontsize=10)
+plt.title('Contours of iterations reached before epsilon reaches 0.1 \n (maxIter = 3000)')
+plt.xlabel('eta')
+plt.ylabel('alpha')
