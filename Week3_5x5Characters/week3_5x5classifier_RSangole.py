@@ -2,6 +2,8 @@ from math import exp
 import numpy as np
 import random
 import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
 
 # For pretty-printing the arrays
 np.set_printoptions(precision=3)
@@ -153,7 +155,8 @@ def ComputeSingleFeedforwardPassSecondStep(alpha, arraySizeList, hiddenArray, vW
 
 # For given w and v wts, calculate SSE for all possible input characters to get total_SSE
 def ComputeOutputsAcrossAllTrainingData(alpha, arraySizeList, numTrainingDataSets, wWeightArray,
-                                        biasHiddenWeightArray, vWeightArray, biasOutputWeightArray):
+                                        biasHiddenWeightArray, vWeightArray, biasOutputWeightArray, verbose = False):
+    errors = []
     selectedTrainingDataSet = 0
     inputArrayLength = arraySizeList[0]
     # hiddenArrayLength = arraySizeList[1]
@@ -166,8 +169,8 @@ def ComputeOutputsAcrossAllTrainingData(alpha, arraySizeList, numTrainingDataSet
             trainingData = trainingDataList[node]
             inputDataList.append(trainingData)
 
-        print ' >In ComputeOutputsAcrossAllTrainingData():'
-        print '   >Data Set Number', selectedTrainingDataSet, 'for letter ', trainingDataList[26]
+        if verbose:
+            print '   >Data Set Number', selectedTrainingDataSet, 'for letter ', trainingDataList[26]
 
         hiddenArray = ComputeSingleFeedforwardPassFirstStep(alpha, arraySizeList, inputDataList, wWeightArray,
                                                             biasHiddenWeightArray)
@@ -178,13 +181,15 @@ def ComputeOutputsAcrossAllTrainingData(alpha, arraySizeList, numTrainingDataSet
         outputArray = ComputeSingleFeedforwardPassSecondStep(alpha, arraySizeList, hiddenArray, vWeightArray,
                                                              biasOutputWeightArray)
 
-        print '   >The output node activations are:', outputArray
+        if verbose:
+            print '   >The output node activations are:', outputArray
 
         desiredOutputArray = np.zeros(outputArrayLength)  # initialize the output array with 0's
         desiredClass = trainingDataList[25]  # identify the desired class
         desiredOutputArray[desiredClass] = 1  # set the desired output for that class to 1
 
-        print '   >The desired output array values are: ', desiredOutputArray
+        if verbose:
+            print '   >The desired output array values are: ', desiredOutputArray
 
         # Determine the error between actual and desired outputs
 
@@ -196,12 +201,27 @@ def ComputeOutputsAcrossAllTrainingData(alpha, arraySizeList, numTrainingDataSet
             errorArray[node] = desiredOutputArray[node] - outputArray[node]
             newSSE = newSSE + errorArray[node] * errorArray[node]
 
-        print '   >The error values are:', errorArray
+        if verbose:
+            print '   >The error values are:', errorArray
 
-        # Print the Summed Squared Error
-        print '   >New SSE = %.6f' % newSSE
+        if verbose:
+            # Print the Summed Squared Error
+            print '   >New SSE = %.6f' % newSSE
+
+        errors.append(newSSE)
 
         selectedTrainingDataSet = selectedTrainingDataSet + 1
+
+    return errors
+
+# Check if errors for all letters are below Epsilon
+def allErrorsBelowEpsilon(errors, epsilon):
+    for error in errors:
+        if error > epsilon:
+            return False
+
+    # got here and no errors > epsilon
+    return True
 
 # Back Prop
 # Wt changes on Hidden -> Output layer
@@ -344,6 +364,7 @@ def BackpropagateBiasHiddenWeights(alpha, eta, arraySizeList, errorArray, output
 
     return (newBiasHiddenWeightArray)
 
+
 # The MAIN module comprising of calls to:
 #   (1) Welcome
 #   (2) Obtain neural network size specifications for a three-layer network consisting of:
@@ -465,13 +486,14 @@ def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTra
             newSSE = newSSE + errorArray[node] * errorArray[node]
 
         # Perform backpropagation
+
         # Perform first part of the backpropagation of weight changes
         newVWeightArray = BackpropagateOutputToHidden(alpha, eta, arraySizeList, errorArray, outputArray, hiddenArray,
                                                       vWeightArray)
         newBiasOutputWeightArray = BackpropagateBiasOutputWeights(alpha, eta, arraySizeList, errorArray, outputArray,
                                                                   biasOutputWeightArray)
 
-        # Perform first part of the backpropagation of weight changes
+        # Perform second part of the backpropagation of weight changes
         newWWeightArray = BackpropagateHiddenToInput(alpha, eta, arraySizeList, errorArray, outputArray, hiddenArray,
                                                      inputDataList, vWeightArray, wWeightArray, biasHiddenWeightArray,
                                                      biasOutputWeightArray)
@@ -509,7 +531,10 @@ def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTra
         letterTracker[iteration] = trainingDataList[26]
 
         if newSSE < epsilon:
-            break
+            errors = ComputeOutputsAcrossAllTrainingData(alpha, arraySizeList, numTrainingDataSets, wWeightArray,
+                                                         biasHiddenWeightArray, vWeightArray, biasOutputWeightArray, verbose)
+            if allErrorsBelowEpsilon(errors, epsilon):
+                break
 
     print '\n** Out of while loop at iteration **', iteration
 
@@ -525,7 +550,7 @@ def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTra
 
 vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker = main(alpha=1.0,
      eta=0.5,
-     maxNumIterations=100,
+     maxNumIterations=1000,
      epsilon=0.1,
      numTrainingDataSets=4,
      seed_value=1
@@ -534,11 +559,24 @@ vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker
 
 def plotSSE(SSETracker, letterTracker):
     x, y = zip(*SSETracker.items())
-
-    fig, ax = plt.subplots()
-    im = ax.plot(x,y)
-    ax.set_title('Total SSE over convergence')
-    plt.show()
+    x, letters = zip(*letterTracker.items())
+    df = pd.DataFrame(dict(iterations=x, SSE=y, letters=letters))
+    sns.lmplot(x='iterations', y='SSE', data=df,
+               fit_reg=False, hue='letters', lowess=True)
 
     return
 
+plotSSE(SSETracker,letterTracker)
+
+# Question 1:
+# Get a convergent solution for all letters:
+vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker = main(alpha=1.0,
+     eta=0.5,
+     maxNumIterations=1000,
+     epsilon=0.1,
+     numTrainingDataSets=4,
+     seed_value=1
+     )
+
+# Question 2:
+#
