@@ -209,3 +209,57 @@ for i, row in zip(np.arange(len(numH)), axarr):
             seed_value=seed_value,
             axi = row,
             numHiddenNodes=hidden_nodes)
+
+# Trying a large epsilon, with small iterations
+alpha = 1.3
+eta = 3
+maxNumIterations = 500
+epsilon = 0.01
+numTrainingDataSets = 4
+seed_value = 2
+numH = [2,8,14,20,26]
+# numH = np.arange(2,24,2)
+sse = pd.DataFrame(columns=['iter','sse','numh'])
+plotter = True
+if plotter:
+    f, axarr = plt.subplots(1, 5, sharey=True)
+    f, axarr2 = plt.subplots(5,1, sharex=True)
+for i, row, row2 in zip(np.arange(len(numH)), axarr, axarr2):
+# for i in np.arange(len(numH)):
+    hidden_nodes = numH[i]
+    vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker, outputArrayTracker = main(
+        alpha=alpha,
+        eta=eta,
+        maxNumIterations=maxNumIterations,
+        epsilon=epsilon,
+        numTrainingDataSets=numTrainingDataSets,
+        seed_value=seed_value,
+        numHiddenNodes = hidden_nodes
+    )
+    sse_i = pd.DataFrame(SSETracker.items(), columns=['iter', 'sse'])
+    sse_i['numh']=hidden_nodes
+    sse=sse.append(sse_i)
+    if plotter:
+        plotSubplots(SSETracker, letterTracker, alpha=alpha,
+                     eta=eta,
+                     maxNumIterations=maxNumIterations,
+                     epsilon=epsilon,
+                     numTrainingDataSets=numTrainingDataSets,
+                     seed_value=seed_value,
+                     axi = row,
+                     numHiddenNodes=hidden_nodes)
+        row2.plot(sse_i.iter,sse_i.sse,marker='o',ms=3,label=hidden_nodes,alpha=.6,linestyle ='')
+        row2.set_title('Number of hidden nodes: %d' %hidden_nodes)
+        row2.margins(0.05)
+
+# sse_grouped= sse.groupby('numh')
+# fig, ax = plt.subplots()
+# for name, group in sse_grouped:
+#     ax.plot(group.iter, group.sse, marker='o', ms=4,
+#             label=name, alpha=.3, linestyle ='')
+# ax.legend()
+# ax.set_xlabel('Iteration Number')
+# ax.set_ylabel('SSE')
+# ax.set_title('alpha: %1.1f  eta: %1.1f  epsilon: %1.1f  Iter/maxIter: %d/%d  seed: %d  hidden: %d' % (
+# alpha, eta, epsilon, df.shape[0], maxNumIterations, seed_value, numHiddenNodes))
+# ax.set_ylim([0, 1.5])
