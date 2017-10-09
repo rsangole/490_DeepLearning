@@ -381,7 +381,7 @@ def BackpropagateBiasHiddenWeights(alpha, eta, arraySizeList, errorArray, output
 #       - Compute the error array
 #       - Compute the new Summed Squared Error (SSE)
 #   (5) Perform a single backpropagation training pass
-def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTrainingDataSets = 4, seed_value = 1):
+def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTrainingDataSets = 4, seed_value = 1, numHiddenNodes = 6):
     random.seed(seed_value)
 
     welcome()
@@ -390,7 +390,7 @@ def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTra
 
     print '1. Setting up network...'
     # Obtain the actual sizes for each layer of the network
-    arraySizeList = obtainNeuralNetworkSizeSpecs()
+    arraySizeList = obtainNeuralNetworkSizeSpecs(numHiddenNodes = numHiddenNodes)
 
     # Unpack the list; ascribe the various elements of the list to the sizes of different network layers
     inputArrayLength = arraySizeList[0]
@@ -432,6 +432,7 @@ def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTra
     outputBiasTracker = dict()
     SSETracker = dict()
     letterTracker = dict()
+    outputArrayTracker = dict()
     print '....Done'
 
     # Next step - Obtain a single set of randomly-selected training values for alpha-classification
@@ -529,6 +530,7 @@ def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTra
         outputBiasTracker[iteration] = biasOutputWeightArray
         SSETracker[iteration] = newSSE
         letterTracker[iteration] = trainingDataList[26]
+        outputArrayTracker[iteration] = outputArray
 
         if newSSE < epsilon:
             errors = ComputeOutputsAcrossAllTrainingData(alpha, arraySizeList, numTrainingDataSets, wWeightArray,
@@ -544,12 +546,12 @@ def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTra
     ComputeOutputsAcrossAllTrainingData(alpha, arraySizeList, numTrainingDataSets, wWeightArray,
                                         biasHiddenWeightArray, vWeightArray, biasOutputWeightArray)
 
-    return vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker
+    return vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker, outputArrayTracker
 
 
 def plotSSE(SSETracker, letterTracker, alpha, eta,
             maxNumIterations, epsilon, numTrainingDataSets,
-            seed_value):
+            seed_value,numHiddenNodes=6):
     x, y = zip(*SSETracker.items())
     x, letters = zip(*letterTracker.items())
     df = pd.DataFrame(dict(iterations=x, SSE=y, letters=letters))
@@ -566,106 +568,29 @@ def plotSSE(SSETracker, letterTracker, alpha, eta,
     ax.legend()
     ax.set_xlabel('Iteration Number')
     ax.set_ylabel('SSE')
-    ax.set_title('alpha: %1.1f  eta: %1.1f  epsilon: %1.1f  Iter/maxIter: %d/%d  seed: %d' %(alpha, eta, epsilon, df.shape[0], maxNumIterations, seed_value))
+    ax.set_title('alpha: %1.1f  eta: %1.1f  epsilon: %1.1f  Iter/maxIter: %d/%d  seed: %d  hidden: %d' %(alpha, eta, epsilon, df.shape[0], maxNumIterations, seed_value,numHiddenNodes))
     ax.set_ylim([0, 1.5])
 
     plt.show()
 
+def plotSubplots(SSETracker, letterTracker, alpha, eta,
+            maxNumIterations, epsilon, numTrainingDataSets,
+            seed_value, axi, numHiddenNodes=6):
+    x, y = zip(*SSETracker.items())
+    x, letters = zip(*letterTracker.items())
+    df = pd.DataFrame(dict(iterations=x, SSE=y, letters=letters))
+    groups = df.groupby('letters')
+    # sns.lmplot(x='iterations', y='SSE', data=df,
+    #            fit_reg=False, hue='letters', lowess=True)
 
-# Question 1:
-# Get a convergent solution for all letters:
-alpha = 1.0
-eta = 0.5
-maxNumIterations = 1000
-epsilon = 0.1
-numTrainingDataSets = 4
-seed_value = 1
+    # Plot
+    # axi.margins(0.05)  # Optional, just adds 5% padding to the autoscaling
+    for name, group in groups:
+        axi.plot(group.iterations, group.SSE, marker='o', linestyle='', ms=4,
+                label=name, alpha = .6)
+    axi.legend()
+    axi.set_xlabel('Iteration Number')
+    axi.set_ylabel('SSE')
+    axi.set_title('alpha: %1.1f  eta: %1.1f  \nepsilon: %1.1f  \nIter/maxIter: %d/%d  \nseed: %d  hidden: %d' %(alpha, eta, epsilon, df.shape[0], maxNumIterations, seed_value,numHiddenNodes))
+    axi.set_ylim([0, 1.5])
 
-vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker = main(
-    alpha=alpha,
-    eta=eta,
-    maxNumIterations=maxNumIterations,
-    epsilon=epsilon,
-    numTrainingDataSets=numTrainingDataSets,
-    seed_value=seed_value
-)
-plotSSE(SSETracker, letterTracker, alpha=alpha,
-    eta=eta,
-    maxNumIterations=maxNumIterations,
-    epsilon=epsilon,
-    numTrainingDataSets=numTrainingDataSets,
-    seed_value=seed_value)
-
-# Question 2:
-# Explore sensitivity of SSE to alpha
-eta = 0.5
-maxNumIterations = 1000
-epsilon = 0.1
-numTrainingDataSets = 4
-seed_value = 1
-maxNumIterations = 10000
-for a in [0.5,1.0,1.5]:
-    vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker = main(
-        alpha=a,
-        eta=eta,
-        maxNumIterations=maxNumIterations,
-        epsilon=epsilon,
-        numTrainingDataSets=numTrainingDataSets,
-        seed_value=seed_value
-    )
-    plotSSE(SSETracker, letterTracker, alpha=a,
-            eta=eta,
-            maxNumIterations=maxNumIterations,
-            epsilon=epsilon,
-            numTrainingDataSets=numTrainingDataSets,
-            seed_value=seed_value)
-
-# Explore sensitivity of SSE to eta
-alpha = 1.0
-maxNumIterations = 10000
-epsilon = 0.1
-numTrainingDataSets = 4
-seed_value = 1
-for e in [0.1,0.5,1.0]:
-    vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker = main(
-        alpha=alpha,
-        eta=e,
-        maxNumIterations=maxNumIterations,
-        epsilon=epsilon,
-        numTrainingDataSets=numTrainingDataSets,
-        seed_value=seed_value
-    )
-    plotSSE(SSETracker, letterTracker, alpha=alpha,
-            eta=e,
-            maxNumIterations=maxNumIterations,
-            epsilon=epsilon,
-            numTrainingDataSets=numTrainingDataSets,
-            seed_value=seed_value)
-
-# Both together now
-maxNumIterations = 3000
-epsilon = 0.1
-numTrainingDataSets = 4
-seed_value = 1
-alpha = np.arange(0.4,1.6,.1)
-eta   = np.arange(0.1,2.1,.1)
-tuneGrid = np.zeros((len(alpha),len(eta)))
-for a in range(len(alpha)):
-    for e in range(len(eta)):
-        vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker = main(
-            alpha=alpha[a],
-            eta=eta[e],
-            maxNumIterations=maxNumIterations,
-            epsilon=epsilon,
-            numTrainingDataSets=numTrainingDataSets,
-            seed_value=seed_value
-        )
-        tuneGrid[a,e]=len(SSETracker)
-
-tuneGrid
-plt.figure()
-CS = plt.contour(eta, alpha, tuneGrid,linestyles='dashed')
-plt.clabel(CS, inline=1, fontsize=10)
-plt.title('Contours of iterations reached before epsilon reaches 0.1 \n (maxIter = 3000)')
-plt.xlabel('eta')
-plt.ylabel('alpha')
