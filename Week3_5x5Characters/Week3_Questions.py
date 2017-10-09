@@ -263,3 +263,36 @@ for i, row, row2 in zip(np.arange(len(numH)), axarr, axarr2):
 # ax.set_title('alpha: %1.1f  eta: %1.1f  epsilon: %1.1f  Iter/maxIter: %d/%d  seed: %d  hidden: %d' % (
 # alpha, eta, epsilon, df.shape[0], maxNumIterations, seed_value, numHiddenNodes))
 # ax.set_ylim([0, 1.5])
+
+
+# Investigation into the hidden activations
+alpha = 1.3
+eta = 2.1
+maxNumIterations = 500
+epsilon = 0.01
+numTrainingDataSets = 4
+seed_value = 1
+numH = 6
+vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker, outputArrayTracker = main(
+        alpha=alpha,
+        eta=eta,
+        maxNumIterations=maxNumIterations,
+        epsilon=epsilon,
+        numTrainingDataSets=numTrainingDataSets,
+        seed_value=seed_value,
+        numHiddenNodes = numH
+    )
+
+wWeightArray = wWeightTracker.pop(len(wWeightTracker))
+biasHiddenWeightArray = hiddenBiasTracker.pop(len(hiddenBiasTracker))
+arraySizeList = obtainNeuralNetworkSizeSpecs(numHiddenNodes=numH)
+hiddenArray = []
+letters=[]
+for l in range(5):
+    x=obtainSelectedAlphabetTrainingValues(l)
+    inputDataList = x[0:25]
+    letters.append(x[26])
+    hiddenArray.append(ComputeSingleFeedforwardPassFirstStep(alpha, arraySizeList, inputDataList, wWeightArray, biasHiddenWeightArray))
+hiddenArray = pd.DataFrame(hiddenArray).transpose()
+hiddenArray.columns = letters
+hiddenArray
