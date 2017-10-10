@@ -2,7 +2,7 @@
 # Get a convergent solution for all letters:
 alpha = 1.0
 eta = 0.5
-maxNumIterations = 1000
+maxNumIterations = 10000
 epsilon = 0.1
 numTrainingDataSets = 4
 seed_value = 1
@@ -48,19 +48,21 @@ for a in [0.5,1.0,1.5]:
             seed_value=seed_value)
 
 # Explore sensitivity of SSE to eta
-alpha = 1.0
+alpha = 1.5
 maxNumIterations = 10000
 epsilon = 0.1
 numTrainingDataSets = 4
 seed_value = 1
-for e in [0.1,0.5,1.0]:
+numH = 4
+for e in [1,1.5,2.0]:
     vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker, outputArrayTracker = main(
         alpha=alpha,
         eta=e,
         maxNumIterations=maxNumIterations,
         epsilon=epsilon,
         numTrainingDataSets=numTrainingDataSets,
-        seed_value=seed_value
+        seed_value=seed_value,
+        numHiddenNodes = numH
     )
     plotSSE(SSETracker, letterTracker, alpha=alpha,
             eta=e,
@@ -96,6 +98,7 @@ plt.clabel(CS, inline=1, fontsize=10)
 plt.title('Contours of iterations reached before epsilon reaches 0.1 \n (maxIter = 3000)')
 plt.xlabel('eta')
 plt.ylabel('alpha')
+
 
 # tuneGrid = np.load('tuneGrid.p')
 # np.amin(tuneGrid,axis=1)
@@ -268,11 +271,11 @@ for i, row, row2 in zip(np.arange(len(numH)), axarr, axarr2):
 # Investigation into the hidden activations
 alpha = 1.3
 eta = 2.1
-maxNumIterations = 500
+maxNumIterations = 5000
 epsilon = 0.01
 numTrainingDataSets = 4
-seed_value = 1
-numH = 6
+seed_value = 10
+numH = 4
 vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker, outputArrayTracker = main(
         alpha=alpha,
         eta=eta,
@@ -282,17 +285,52 @@ vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker
         seed_value=seed_value,
         numHiddenNodes = numH
     )
-
+sse = SSETracker.pop(len(SSETracker))
 wWeightArray = wWeightTracker.pop(len(wWeightTracker))
+vWeightArray = vWeightTracker.pop(len(vWeightTracker))
 biasHiddenWeightArray = hiddenBiasTracker.pop(len(hiddenBiasTracker))
+biasOutputWeightArray = outputBiasTracker.pop(len(outputBiasTracker))
 arraySizeList = obtainNeuralNetworkSizeSpecs(numHiddenNodes=numH)
 hiddenArray = []
 letters=[]
+letterSSE = []
 for l in range(5):
     x=obtainSelectedAlphabetTrainingValues(l)
     inputDataList = x[0:25]
     letters.append(x[26])
-    hiddenArray.append(ComputeSingleFeedforwardPassFirstStep(alpha, arraySizeList, inputDataList, wWeightArray, biasHiddenWeightArray))
+    h=ComputeSingleFeedforwardPassFirstStep(alpha, arraySizeList, inputDataList, wWeightArray, biasHiddenWeightArray)
+    hiddenArray.append(h)
+    o=ComputeSingleFeedforwardPassSecondStep(alpha, arraySizeList, h,
+                                                     vWeightArray, biasOutputWeightArray)
+    errorArray = np.zeros(5)
+
+    desiredOutputArray = np.zeros(5)  # initialize the output array with 0's
+    desiredClass = x[25]  # identify the desired class
+    desiredOutputArray[desiredClass] = 1  # set the desired output for that class to 1
+
+    # Determine the error between actual and desired outputs
+    newSSE = 0.0
+    for node in range(5):  # Number of nodes in output set (classes)
+        errorArray[node] = desiredOutputArray[node] - o[node]
+        newSSE = newSSE + errorArray[node] * errorArray[node]
+
+    letterSSE.append(newSSE)
+
 hiddenArray = pd.DataFrame(hiddenArray).transpose()
 hiddenArray.columns = letters
 hiddenArray
+plt.figure()
+plt.imshow(hiddenArray)
+plt.xticks([0,1,2,3,4],letters)
+plt.colorbar()
+plt.ylabel('Hidden Node Activation')
+plt.xlabel('Letter')
+plt.title('alpha: %1.1f  eta: %1.1f  sse/epsilon: %1.3f/%1.3f  \nIter/maxIter: %d/%d  seed: %d  hidden: %d' % (
+alpha, eta, sse, epsilon, len(outputArrayTracker), maxNumIterations, seed_value, numH))
+
+plt.bar([0,1,2,3,4],letterSSE)
+plt.xticks([0,1,2,3,4],letters)
+plt.ylabel('Letter specific SSE')
+plt.xlabel('Letter')
+plt.title('alpha: %1.1f  eta: %1.1f  sse/epsilon: %1.3f/%1.3f  \nIter/maxIter: %d/%d  seed: %d  hidden: %d' % (
+alpha, eta, sse, epsilon, len(outputArrayTracker), maxNumIterations, seed_value, numH))

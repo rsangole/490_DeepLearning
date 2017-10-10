@@ -37,8 +37,9 @@ def obtainNeuralNetworkSizeSpecs(numInputNodes=25, numHiddenNodes=6, numOutputNo
 
 # Single weight randomly picked between -1 and 1
 def InitializeWeight():
-    randomNum = random.random()
-    weight = 1 - 2 * randomNum      #returns a random number between -1 and 1
+    # randomNum = random.random()
+    # weight = 1 - 2 * randomNum      #returns a random number between -1 and 1
+    weight= random.uniform(-0.3, 0.3)
     return (weight)
 
 # Weight array of needed size using lower & upper layer sizes. Called from main
