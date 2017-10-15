@@ -269,14 +269,14 @@ for i, row, row2 in zip(np.arange(len(numH)), axarr, axarr2):
 
 
 # Investigation into the hidden activations
-alpha = 1.3
-eta = 2.1
-maxNumIterations = 5000
+alpha = 1.2
+eta = 1.5
+maxNumIterations = 20000
 epsilon = 0.01
 numTrainingDataSets = 4
-seed_value = 10
-numH = 4
-vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker, outputArrayTracker = main(
+seed_value = 2440
+numH = 3
+vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker, outputArrayTracker, errors = main(
         alpha=alpha,
         eta=eta,
         maxNumIterations=maxNumIterations,
@@ -326,11 +326,12 @@ plt.colorbar()
 plt.ylabel('Hidden Node Activation')
 plt.xlabel('Letter')
 plt.title('alpha: %1.1f  eta: %1.1f  sse/epsilon: %1.3f/%1.3f  \nIter/maxIter: %d/%d  seed: %d  hidden: %d' % (
-alpha, eta, sse, epsilon, len(outputArrayTracker), maxNumIterations, seed_value, numH))
+alpha, eta, np.mean(errors), epsilon, len(outputArrayTracker), maxNumIterations, seed_value, numH))
 
+plt.figure()
 plt.bar([0,1,2,3,4],letterSSE)
 plt.xticks([0,1,2,3,4],letters)
 plt.ylabel('Letter specific SSE')
 plt.xlabel('Letter')
 plt.title('alpha: %1.1f  eta: %1.1f  sse/epsilon: %1.3f/%1.3f  \nIter/maxIter: %d/%d  seed: %d  hidden: %d' % (
-alpha, eta, sse, epsilon, len(outputArrayTracker), maxNumIterations, seed_value, numH))
+alpha, eta, np.mean(errors), epsilon, len(outputArrayTracker), maxNumIterations, seed_value, numH))
