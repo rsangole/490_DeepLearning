@@ -243,33 +243,43 @@ alpha, eta, np.mean(errors), epsilon, len(outputArrayTracker), maxNumIterations,
 #
 # Question 3:
 # Explore sensitivity of SSE to # of hidden nodes
-alpha = 1.3
+alpha = 1.4
 eta = 2.1
 maxNumIterations = 5000
-epsilon = 0.1
+epsilon = 0.06
 numTrainingDataSets = 25
 seed_value = 1
 numH = [6,8,10]
-f, axarr = plt.subplots(1, 5, sharey=True)
+result_set = dict()
+f, axarr = plt.subplots(3,1, sharey = True, sharex= True)
 for i, row in zip(np.arange(len(numH)), axarr):
     hidden_nodes = numH[i]
-    vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker, outputArrayTracker = main(
+    vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker, outputArrayTracker, errors = main(
         alpha=alpha,
         eta=eta,
         maxNumIterations=maxNumIterations,
         epsilon=epsilon,
         numTrainingDataSets=numTrainingDataSets,
         seed_value=seed_value,
-        numHiddenNodes = hidden_nodes
+        numHiddenNodes=hidden_nodes
     )
-    plotSubplots(SSETracker, letterTracker, alpha=alpha,
-            eta=eta,
-            maxNumIterations=maxNumIterations,
-            epsilon=epsilon,
-            numTrainingDataSets=numTrainingDataSets,
-            seed_value=seed_value,
-            axi = row,
-            numHiddenNodes=hidden_nodes)
+    o = {'numH': hidden_nodes,
+                   'SSETracker': SSETracker,
+                   'letterTracker': letterTracker,
+                   'errors': errors}
+    result_set[i]=o
+    plotSubplots(SSETracker, letterTracker,
+                 alpha=alpha,
+                 eta=eta,
+                 maxNumIterations=maxNumIterations,
+                 epsilon=epsilon,
+                 errors = errors,
+                 numTrainingDataSets=numTrainingDataSets,
+                 seed_value=seed_value,
+                 axi=row,
+                 numHiddenNodes=hidden_nodes)
+
+
 
 # # Trying a large epsilon, with small iterations
 # alpha = 1.3

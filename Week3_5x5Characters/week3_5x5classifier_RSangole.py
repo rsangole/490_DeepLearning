@@ -539,6 +539,7 @@ def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTra
             if allErrorsBelowEpsilon(errors, epsilon):
                 break
 
+
     print '\n** Out of while loop at iteration **', iteration
 
     # After training, get a new comparative set of outputs, errors, and SSE
@@ -547,7 +548,7 @@ def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTra
     ComputeOutputsAcrossAllTrainingData(alpha, arraySizeList, numTrainingDataSets, wWeightArray,
                                         biasHiddenWeightArray, vWeightArray, biasOutputWeightArray)
 
-    return vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker, outputArrayTracker
+    return vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker, outputArrayTracker, errors
 
 
 def plotSSE(SSETracker, letterTracker, alpha, eta,

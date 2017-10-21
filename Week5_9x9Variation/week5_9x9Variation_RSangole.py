@@ -1,9 +1,17 @@
+# This code solves the NN for the response variable being the 'classes' of the alphabets
+# In total there are 9 classes, thus number of output nodes is 9
+# The random weights are initiated in [-0.3, 0.3]
+# Sigmoid activation function is used
+
 from math import exp
 import numpy as np
 import random
 import matplotlib.pyplot as plt
 import pandas as pd
-import seaborn as sns
+
+# tinedir = os.path.expanduser('~') + '/Documents/OneDrive/MSPA/490/tineGithub'
+# sys.path.insert(0, tinedir)
+# from letter import *
 
 # For pretty-printing the arrays
 np.set_printoptions(precision=3)
@@ -12,6 +20,81 @@ np.set_printoptions(suppress=True)
 def welcome():
     print 'This program learns to distinguish between many capital letters...'
     return ()
+
+class Letter(object):
+    """A class to hold one instance of a given letter.
+    """
+    def __init__(self, flattened_letter_array, target_letter):
+        self.array = flattened_letter_array
+        self.letter = target_letter
+        self.target = ord(self.letter.lower()) - 97
+
+def load_letters(size=25):
+    """ Load all letters of given size (25, 81, etc)
+
+    :param size:
+    :return: number of unique letters and a list of Letter objects
+    """
+    from os import listdir
+    basedir = '/Users/Rahul/Documents/OneDrive/MSPA/490/tineGithub/letter'  # set this to match your environment!
+
+    if size == 25:
+        alpha_dir = basedir + '/5x5_alphabet/'
+    elif size == 81:
+        alpha_dir = basedir + '/9x9_alphabet/'
+
+    letters = [f for f in listdir(alpha_dir) if f[0] != '.']
+    letter_objects = []
+
+    for letter in letters:
+        letter_dir = alpha_dir + letter + '/'
+        for instance in [f for f in listdir(letter_dir)]:
+            instance_array = []
+            with open(letter_dir + instance) as f:
+                for line in f:
+                    if '#' not in line:
+                        instance_array.extend(line.replace(' ','').replace(',','').replace('\n',''))
+            letter_objects.append(Letter([int(x) for x in instance_array],letter))
+
+    return len(letters), letter_objects
+
+def split_letters_into_train_and_test(letters, pct_test=20):
+    """Split a given set of letters into training and test sets.
+
+    :param letters:
+    :param pct_test: a rough percentage of how many letters to hold back for testing
+    :return: train, test
+    """
+    pass
+
+def get_one_example_per_letter(all_letters):
+    letters = set([l.letter for l in all_letters])
+    letter_objects = []
+    while len(letters) > 0:
+        let = random.choice(all_letters)
+        if let.letter in letters:
+            letter_objects.append(let)
+            letters.remove(let.letter)
+    return letter_objects
+
+# Distortion code from Scott Anderson
+def add_distortion(array_to_distort, percent):
+    row = 0
+    for letter_arr in array_to_distort:
+        col = 0
+        for letter_item in letter_arr:
+            rand_val = random()
+            if rand_val <= percent:
+                cur_val = array_to_distort[row, col]
+                if cur_val == 0:
+                    array_to_distort[row, col] = 1
+                else:
+                    array_to_distort[row, col] = 0
+
+            col += 1
+
+        row += 1
+    return (array_to_distort)
 
 # Compute neuron activation using sigmoid transfer function
 def computeTransferFnctn(summedNeuronInput, alpha):
@@ -29,10 +112,6 @@ def matrixDotProduct(matrx1, matrx2):
 
 # NN Size Specs
 def obtainNeuralNetworkSizeSpecs(numInputNodes=81, numHiddenNodes=6, numOutputNodes=26):
-    # print '  The number of nodes at each level are:'
-    # print '    Input: 5x5 (square array)'
-    # print '    Hidden: %d' %numHiddenNodes
-    # print '    Output: %d' %numOutputNodes
     return numInputNodes, numHiddenNodes, numOutputNodes
 
 # Single weight randomly picked between -1 and 1
@@ -234,14 +313,12 @@ def ComputeOutputsAcrossAllTrainingData(alpha, arraySizeList, numTrainingDataSet
                                         biasHiddenWeightArray, vWeightArray, biasOutputWeightArray, verbose = False):
     errors = []
     selectedTrainingDataSet = 0
-    inputArrayLength = arraySizeList[0]
-    hiddenArrayLength = arraySizeList[1]
+    # inputArrayLength = arraySizeList[0]
+    # hiddenArrayLength = arraySizeList[1]
     outputArrayLength = arraySizeList[2]
 
     while selectedTrainingDataSet < numTrainingDataSets:
         trainingDataList = obtainSelectedAlphabetTrainingValues(dataSet=selectedTrainingDataSet)
-        inputDataList = []
-        # trainingDataInputList = trainingDataList[1]
         inputDataList = trainingDataList[1]
 
         # for node in range(inputArrayLength):
@@ -264,8 +341,8 @@ def ComputeOutputsAcrossAllTrainingData(alpha, arraySizeList, numTrainingDataSet
             print '   >The output node activations are:', outputArray
 
         desiredOutputArray = np.zeros(outputArrayLength)  # initialize the output array with 0's
-        desiredClass = trainingDataList[2]  # identify the desired class
-        desiredOutputArray[desiredClass] = 1  # set the desired output for that class to 1
+        desiredClass = trainingDataList[4]  # identify the desired class
+        desiredOutputArray[desiredClass-1] = 1  # set the desired output for that class to 1
 
         if verbose:
             print '   >The desired output array values are: ', desiredOutputArray
@@ -460,7 +537,7 @@ def BackpropagateBiasHiddenWeights(alpha, eta, arraySizeList, errorArray, output
 #       - Compute the error array
 #       - Compute the new Summed Squared Error (SSE)
 #   (5) Perform a single backpropagation training pass
-def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTrainingDataSets = 4, seed_value = 1, numHiddenNodes = 6):
+def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTrainingDataSets = 25, seed_value = 1, numHiddenNodes = 6):
     random.seed(seed_value)
 
     welcome()
@@ -469,7 +546,7 @@ def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTra
 
     print '1. Setting up network...'
     # Obtain the actual sizes for each layer of the network
-    arraySizeList = obtainNeuralNetworkSizeSpecs(numHiddenNodes = numHiddenNodes)
+    arraySizeList = obtainNeuralNetworkSizeSpecs(numHiddenNodes = numHiddenNodes, numOutputNodes = 9)
 
     # Unpack the list; ascribe the various elements of the list to the sizes of different network layers
     inputArrayLength = arraySizeList[0]
@@ -511,14 +588,13 @@ def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTra
     outputBiasTracker = dict()
     SSETracker = dict()
     letterTracker = dict()
+    classTracker = dict()
     outputArrayTracker = dict()
     print '....Done'
 
     # Next step - Obtain a single set of randomly-selected training values for alpha-classification
     print '5. Starting convergence iterations...'
     while iteration < maxNumIterations:
-
-        # print '  >> Iteration number: ', iteration
 
         # Increment the iteration count
         iteration = iteration + 1
@@ -531,32 +607,16 @@ def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTra
 
         inputDataList = trainingDataList[1]
 
-        # for node in range(inputArrayLength):
-        #     trainingData = trainingDataList[node]
-        #     inputDataList.append(trainingData)
-
-        # print '     Training set randomly chosen: Letter ', trainingDataList[3]
-
         desiredOutputArray = np.zeros(outputArrayLength)  # initialize the output array with 0's
-        desiredClass = trainingDataList[2]  # identify the desired class
-        desiredOutputArray[desiredClass] = 1  # set the desired output for that class to 1
-
-        # print '     The desired output array values are: ', desiredOutputArray
+        desiredClass = trainingDataList[4]  # identify the desired class
+        desiredOutputArray[desiredClass-1] = 1  # set the desired output for that class to 1
 
         # Compute a single feed-forward pass and obtain the Actual Outputs
-
         hiddenArray = ComputeSingleFeedforwardPassFirstStep(alpha, arraySizeList, inputDataList,
                                                         wWeightArray, biasHiddenWeightArray)
 
         outputArray = ComputeSingleFeedforwardPassSecondStep(alpha, arraySizeList, hiddenArray,
                                                              vWeightArray, biasOutputWeightArray)
-
-            #  Optional alternative code for later use:
-            #  Assign the hidden and output values to specific different variables
-            #    for node in range(hiddenArrayLength):
-            #        actualHiddenOutput[node] = actualAllNodesOutputList [node]
-            #    for node in range(outputArrayLength):
-            #        actualOutput[node] = actualAllNodesOutputList [hiddenArrayLength + node]
 
         # Initialize the error array
         errorArray = np.zeros(outputArrayLength)
@@ -568,7 +628,6 @@ def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTra
             newSSE = newSSE + errorArray[node] * errorArray[node]
 
         # Perform backpropagation
-
         # Perform first part of the backpropagation of weight changes
         newVWeightArray = BackpropagateOutputToHidden(alpha, eta, arraySizeList, errorArray, outputArray, hiddenArray,
                                                       vWeightArray)
@@ -611,6 +670,7 @@ def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTra
         outputBiasTracker[iteration] = biasOutputWeightArray
         SSETracker[iteration] = newSSE
         letterTracker[iteration] = trainingDataList[3]
+        classTracker[iteration] = trainingDataList[5]
         outputArrayTracker[iteration] = outputArray
 
         if newSSE < epsilon:
@@ -627,7 +687,7 @@ def main(alpha = 1.0, eta = 0.5, maxNumIterations = 5000, epsilon = 0.05, numTra
     print '  After training:'
     ComputeOutputsAcrossAllTrainingData(alpha, arraySizeList, numTrainingDataSets, wWeightArray, biasHiddenWeightArray, vWeightArray, biasOutputWeightArray)
 
-    return vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker, outputArrayTracker, errors
+    return vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker, outputArrayTracker, errors, classTracker
 
 
 def plotSSE(SSETracker, letterTracker, alpha, eta,
@@ -649,7 +709,7 @@ def plotSSE(SSETracker, letterTracker, alpha, eta,
     ax.legend(ncol=2)
     ax.set_xlabel('Iteration Number')
     ax.set_ylabel('SSE')
-    ax.set_title('alpha: %1.1f  eta: %1.1f  sse/epsilon: %1.3f/%1.3f  \niter/maxIter: %d/%d  seed: %d  hidden: %d' %(alpha, eta, np.mean(errors), epsilon, df.shape[0], maxNumIterations, seed_value,numHiddenNodes))
+    ax.set_title('alpha: %1.1f  eta: %1.1f  sse/epsilon: %1.3f/%1.3f  \nIter/maxIter: %d/%d  seed: %d  hidden: %d' %(alpha, eta, np.mean(errors), epsilon, df.shape[0], maxNumIterations, seed_value,numHiddenNodes))
     ax.set_ylim([0, 1.5])
 
     plt.show()
@@ -697,5 +757,44 @@ def plotSSEbyLetter(alpha, eta, maxNumIterations, epsilon, errors, seed_value, n
     plt.xticks(range(25), letter_list)
     plt.ylabel('Letter specific SSE')
     plt.xlabel('Letter')
-    plt.title('alpha: %1.1f  eta: %1.1f  sse/epsilon: %1.3f/%1.3f  \nIter/maxIter: %d/%d  seed: %d  hidden: %d' % (
+    plt.title('alpha: %1.1f  eta: %1.1f  sse/epsilon: %1.3f/%1.3f  \niter/maxIter: %d/%d  seed: %d  hidden: %d' % (
         alpha, eta, np.mean(errors), epsilon, len(outputArrayTracker), maxNumIterations, seed_value, numHiddenNodes))
+
+def plotSSEbyClass(SSETracker, classTracker, alpha, eta,
+            maxNumIterations, epsilon, errors, numTrainingDataSets,
+            seed_value,numHiddenNodes):
+    x, y = zip(*SSETracker.items())
+    x, classes = zip(*classTracker.items())
+    df = pd.DataFrame(dict(iterations=x, SSE=y, classes=classes))
+    groups = df.groupby('classes')
+
+    # Plot
+    fig, ax = plt.subplots()
+    ax.margins(0.05)  # Optional, just adds 5% padding to the autoscaling
+    for name, group in groups:
+        ax.plot(group.iterations, group.SSE, marker='o', linestyle='', ms=4,
+                label=name, alpha = .6)
+    ax.legend(ncol=2)
+    ax.set_xlabel('Iteration Number')
+    ax.set_ylabel('SSE')
+    ax.set_title('alpha: %1.1f  eta: %1.1f  sse/epsilon: %1.3f/%1.3f  \niter/maxIter: %d/%d  seed: %d  hidden: %d' %(alpha, eta, np.mean(errors), epsilon, df.shape[0], maxNumIterations, seed_value,numHiddenNodes))
+    ax.set_ylim([0, 1.5])
+
+    plt.show()
+
+
+def plotHiddenHeatmap(hiddenArray, classes, alpha, eta,
+outputArrayTracker, maxNumIterations, epsilon, errors,
+                      seed_value, numHiddenNodes):
+    hiddenActivation_df = pd.DataFrame(hiddenArray).transpose()
+    hiddenActivation_df.columns = classes
+    hiddenActivation_df
+    plt.figure()
+    plt.imshow(hiddenActivation_df)
+    plt.xticks(range(9), classes)
+    plt.colorbar()
+    plt.ylabel('Hidden Node Activation')
+    plt.xlabel('Letter')
+    plt.title('alpha: %1.1f  eta: %1.1f  sse/epsilon: %1.3f/%1.3f  \niter/maxIter: %d/%d  seed: %d  hidden: %d' % (
+        alpha, eta, np.mean(errors), epsilon, len(outputArrayTracker), maxNumIterations, seed_value, numHiddenNodes))
+
