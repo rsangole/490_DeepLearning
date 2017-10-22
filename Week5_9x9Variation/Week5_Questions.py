@@ -89,3 +89,89 @@ plt.xlabel('Letter/Class')
 plt.title('alpha: %1.1f  eta: %1.1f  sse/epsilon: %1.3f/%1.3f  \nIter/maxIter: %d/%d  seed: %d  hidden: %d' % (
     alpha, eta, np.mean(errors), epsilon, len(outputArrayTracker), maxNumIterations, seed_value, numH))
 
+
+
+#-----------------------------------------------------------------------------------------------------------
+
+
+# Explore sensitivity of SSE & convergence iterations to initial weight arrays
+alpha = 1
+eta = 1
+maxNumIterations = 15000
+epsilon = 0.1
+numTrainingDataSets = 25
+numH = 4
+seed_value =np.arange(1,30)
+vW = dict()
+wW = dict()
+hiddenBias = dict()
+outputBias = dict()
+SSE = dict()
+iterStop = dict()
+letters = dict()
+op = dict()
+cT = dict()
+for s in range(len(seed_value)):
+    vWeightTracker, wWeightTracker, hiddenBiasTracker, outputBiasTracker, SSETracker, letterTracker, outputArrayTracker, errors, classTracker = main(
+        alpha=alpha,
+        eta=eta,
+        maxNumIterations=maxNumIterations,
+        epsilon=epsilon,
+        numTrainingDataSets=numTrainingDataSets,
+        seed_value=seed_value[s],
+        numHiddenNodes=numH
+    )
+    wW[s] = vWeightTracker.pop(len(vWeightTracker))
+    vW[s] = wWeightTracker.pop(len(wWeightTracker))
+    hiddenBias[s] = hiddenBiasTracker.pop(len(hiddenBiasTracker))
+    outputBias[s] = outputBiasTracker.pop(len(outputBiasTracker))
+    iterStop[s] = len(SSETracker)
+    SSE[s] = SSETracker.pop(len(SSETracker))
+    letters[s] = letterTracker.pop(len(letterTracker))
+    op[s] = outputArrayTracker.pop(len(outputArrayTracker))
+    cT[s] = classTracker.pop(len(classTracker))
+
+i, sse = zip(*SSE.items())
+plt.hist(sse,bins=30)
+plt.title('Histogram of SSE for 30 random starts')
+plt.xlabel('SSE')
+plt.ylabel('Count')
+
+# w weights ->
+d = pd.DataFrame(wW.items(),columns=['seed','value'])
+
+wWaverages = np.zeros([9,4])
+wWstd = np.zeros([9,4])
+for o in np.arange(9): #5 outputs
+    for h in np.arange(4): #6 hidden
+        wWaverages[o][h] = np.mean([d.value[i][o][h] for i in np.arange(d.shape[0])])
+        wWstd[o][h] = np.std([d.value[i][o][h] for i in np.arange(d.shape[0])])
+wWaverages
+wWstd
+
+for h in np.arange(4):
+    plt.hist([d.value[i][0][h] for i in np.arange(d.shape[0])],alpha = .7)
+    plt.title('Weights for 4 hidden nodes in W array for output=0 node over 30 runs')
+    plt.xlabel('Weight')
+
+# v weights ->
+d = pd.DataFrame(vW.items(),columns=['seed','value'])
+
+vWaverages = np.zeros([4,81])
+vWstd = np.zeros([4,81])
+for i in np.arange(81): #5 outputs
+    for h in np.arange(4): #6 hidden
+        vWaverages[h][i] = np.mean([d.value[x][h][i] for x in np.arange(d.shape[0])])
+        vWstd[h][i] = np.std([d.value[x][h][i] for x in np.arange(d.shape[0])])
+vWaverages
+vWstd
+
+for h in np.arange(81):
+    plt.hist([d.value[x][h][0] for x in np.arange(d.shape[0])],alpha = .3)
+    plt.title('Weights for 25 input nodes in V array for hidden=0 node over 30 runs')
+    plt.xlabel('Weight')
+
+plt.hist([iterStop[x] for x in np.arange(len(iterStop))],bins=50)
+plt.title('Hist of iterations at which SSE < (eplison=0.1) for 30 starts')
+plt.xlabel('Stop Iteration Number')
+
